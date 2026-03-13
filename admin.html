@@ -26,7 +26,7 @@
             background: var(--dark-bg); 
             color: var(--text); 
             font-family: 'Inter', 'Hind Siliguri', sans-serif;
-            display: none; /* Security check */
+            display: none; /* Security check - will show via JS */
         }
 
         /* Dashboard Layout */
@@ -205,14 +205,14 @@
 </div>
 
 <script>
-    // --- (b) Firebase Config (Must Match index.html) ---
+    // (b) - আপনার দেওয়া ফায়ারবেস কানেকশন আইডি
     const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT.firebaseapp.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT.appspot.com",
-        messagingSenderId: "YOUR_ID",
-        appId: "YOUR_APP_ID"
+        apiKey: "BORAzOk9gfuDcIllmqyirg6PtxjLXczeJYSurRw1kCHoE2gEnEN37bhEK19QKkPMM3VKriqBFqBYBb2bdeO4gxE",
+        authDomain: "news-70912.firebaseapp.com",
+        projectId: "news-70912",
+        storageBucket: "news-70912.appspot.com",
+        messagingSenderId: "1087091279604",
+        appId: "1:1087091279604:web:866e4a32c64b5f12"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -220,6 +220,7 @@
 
     // Security & Auth Check
     window.onload = function() {
+        // ইন্ডেক্স থেকে পাসওয়ার্ড দিয়ে না আসলে এক্সেস পাবে না
         if (sessionStorage.getItem("saim_admin") !== "active") {
             window.location.href = "index.html";
         } else {
@@ -249,6 +250,8 @@
         }).then(() => {
             showToast("নিউজ সিস্টেম লাইভ হয়েছে!");
             resetForm();
+        }).catch((err) => {
+            showToast("Error: " + err.message);
         });
     }
 
@@ -270,7 +273,7 @@
                 html += `
                     <tr class="news-row">
                         <td><img src="${thumb}" class="row-img"></td>
-                        <td><div style="width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${n.title}</div></td>
+                        <td><div style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${n.title}</div></td>
                         <td><span class="badge badge-cat">${n.category}</span></td>
                         <td style="font-size:0.8rem; opacity:0.6;">${n.date}</td>
                         <td>
