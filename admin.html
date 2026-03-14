@@ -464,19 +464,19 @@ tr:hover td{background:rgba(255,255,255,.02)}
 </div><!-- /main -->
 
 <script>
-// ── AUTH CHECK ──
-if(!sessionStorage.getItem('sna_admin')){
-  window.location.href='admin-login.html';
-}
+// AUTH
+if(!sessionStorage.getItem('sna_admin')) window.location.href='admin-login.html';
 
-// ── FIREBASE INIT ──
+// FIREBASE
 const firebaseConfig = {
-  apiKey: "BORAzOk9gfuDcIllmqyirg6PtxjLXczeJYSurRw1kCHoE2gEnEN37bhEK19QKkPMM3VKriqBFqBYBb2bdeO4gxE",
+  apiKey: "AIzaSyAGF-VGW7lOYAmnyHbyL04epcBoac2o0JE",
   authDomain: "saimnews-5df37.firebaseapp.com",
+  databaseURL: "https://saimnews-5df37-default-rtdb.firebaseio.com",
   projectId: "saimnews-5df37",
-  storageBucket: "saimnews-5df37.appspot.com",
-  messagingSenderId: "1087091279604",
-  appId: "1:1087091279604:web:866e4a32c64b5f12"
+  storageBucket: "saimnews-5df37.firebasestorage.app",
+  messagingSenderId: "715617372523",
+  appId: "1:715617372523:web:bdd657878e4e2f12f4a42e",
+  measurementId: "G-XNZ42MQXMB"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
