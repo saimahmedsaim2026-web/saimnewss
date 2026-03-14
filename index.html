@@ -153,8 +153,11 @@
         <i class="fas fa-shield-alt"></i> SECURE TERMINAL (DBL CLICK)
     </div>
 </footer>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <script>
+    // আপনার ফায়ারবেস কনফিগারেশন (বজায় রাখা হয়েছে)
     const firebaseConfig = {
         apiKey: "BORAzOk9gfuDcIllmqyirg6PtxjLXczeJYSurRw1kCHoE2gEnEN37bhEK19QKkPMM3VKriqBFqBYBb2bdeO4gxE",
         authDomain: "news-70912.firebaseapp.com",
@@ -164,38 +167,55 @@
         appId: "1:1087091279604:web:866e4a32c64b5f12"
     };
 
-    firebase.initializeApp(firebaseConfig);
+    // ফায়ারবেস শুরু করা
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.firestore();
     let allNews = [];
 
-    // ডাটাবেস থেকে নিউজ সংগ্রহ
+    // ডাটাবেস থেকে রিয়েলটাইম নিউজ সংগ্রহ
     function connectStream() {
+        console.log("Firestore-এর সাথে সংযোগ স্থাপন করা হচ্ছে...");
+        
+        // 'saimNews' কালেকশন থেকে সময় অনুযায়ী (Timestamp) নিউজ আনা হচ্ছে
         db.collection("saimNews").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
             allNews = [];
-            snapshot.forEach(doc => allNews.push({id: doc.id, ...doc.data()}));
+            snapshot.forEach(doc => {
+                allNews.push({ id: doc.id, ...doc.data() });
+            });
+            
+            console.log("রিয়েলটাইম আপডেট: " + allNews.length + " টি খবর পাওয়া গেছে।");
             renderNews(allNews);
         }, (error) => {
             console.error("Connection Error:", error);
-            document.getElementById('netflix-feed').innerHTML = "<p style='color:red;'>সার্ভার কানেকশন এরর!</p>";
+            // স্ক্রিনে এরর দেখানোর জন্য
+            const feed = document.getElementById('netflix-feed');
+            if(feed) feed.innerHTML = `<p style='color:red;'>সার্ভার এরর: ${error.message}</p>`;
         });
     }
 
+    // নিউজগুলো ওয়েবসাইটে দেখানোর ফাংশন
     function renderNews(dataList) {
         const feed = document.getElementById('netflix-feed');
+        if (!feed) return;
+
         if (dataList.length === 0) {
-            feed.innerHTML = "<p style='color:#666;'>কোনো খবর পাওয়া যায়নি।</p>";
+            feed.innerHTML = "<p style='color:#666;'>এখনো কোনো সংবাদ আপলোড করা হয়নি।</p>";
             return;
         }
 
         let html = "";
         dataList.forEach((data) => {
-            const thumb = data.videoId ? `https://img.youtube.com/vi/${data.videoId}/mqdefault.jpg` : data.image;
+            // ভিডিও থাকলে ইউটিউব থাম্বনেইল, না থাকলে ছবির লিঙ্ক ব্যবহার হবে
+            const thumb = data.videoId ? `https://img.youtube.com/vi/${data.videoId}/mqdefault.jpg` : (data.image || 'https://via.placeholder.com/300x170');
+            
             html += `
                 <div class="netflix-card" onclick="openVortex('${data.id}')">
                     <img src="${thumb}" alt="News">
                     <div class="card-info">
-                        <small style="color:var(--primary); font-weight:bold; text-transform:uppercase;">${data.category}</small>
-                        <h4 style="color:white; font-size:0.95rem; margin-top:5px; font-weight:600;">${data.title}</h4>
+                        <small style="color:red; font-weight:bold; text-transform:uppercase;">${data.category || 'সাধারণ'}</small>
+                        <h4 style="color:white; font-size:0.95rem; margin-top:5px; font-weight:600;">${data.title || 'শিরোনামহীন'}</h4>
                     </div>
                 </div>
             `;
@@ -203,34 +223,38 @@
         feed.innerHTML = html;
     }
 
+    // সার্চ ফাংশন
     function searchNews() {
         const term = document.getElementById('searchInput').value.toLowerCase();
         const filtered = allNews.filter(n => 
-            n.title.toLowerCase().includes(term) || 
-            n.category.toLowerCase().includes(term)
+            (n.title && n.title.toLowerCase().includes(term)) || 
+            (n.category && n.category.toLowerCase().includes(term))
         );
         document.getElementById('rowTitle').innerText = term ? `ফলাফল: ${term.toUpperCase()}` : "TRENDING NOW";
         renderNews(filtered);
     }
 
+    // নিউজের বিস্তারিত পপ-আপ (Vortex) খোলার ফাংশন
     function openVortex(id) {
         const n = allNews.find(item => item.id === id);
+        if (!n) return;
+
         const display = document.getElementById('vortex-data');
         
         let media = n.videoId ? `
             <div style="position:relative; padding-bottom:56.25%; height:0; border-radius:15px; overflow:hidden; margin:25px 0; border:1px solid #333; box-shadow: 0 0 30px rgba(255,0,0,0.1);">
                 <iframe src="https://www.youtube.com/embed/${n.videoId}?autoplay=1" style="position:absolute; inset:0; width:100%; height:100%; border:none;" allowfullscreen></iframe>
             </div>
-        ` : `<img src="${n.image}" style="width:100%; border-radius:15px; margin:25px 0; border:1px solid #333;">`;
+        ` : `<img src="${n.image || ''}" style="width:100%; border-radius:15px; margin:25px 0; border:1px solid #333;">`;
 
         display.innerHTML = `
-            <h1 style="font-size:2.2rem; color:#fff; line-height:1.3; margin-bottom:15px;">${n.title}</h1>
+            <h1 style="font-size:2.2rem; color:#fff; line-height:1.3; margin-bottom:15px;">${n.title || ''}</h1>
             <div style="display:flex; gap:15px; align-items:center; margin-bottom:20px;">
-                <span style="background:var(--primary); color:white; padding:2px 12px; border-radius:4px; font-size:0.8rem; font-weight:bold;">${n.category}</span>
-                <span style="color:#666; font-size:0.9rem;"><i class="far fa-calendar-alt"></i> ${n.date}</span>
+                <span style="background:red; color:white; padding:2px 12px; border-radius:4px; font-size:0.8rem; font-weight:bold;">${n.category || ''}</span>
+                <span style="color:#666; font-size:0.9rem;"><i class="far fa-calendar-alt"></i> ${n.date || ''}</span>
             </div>
             ${media}
-            <div style="font-size:1.15rem; line-height:1.8; color:#bbb; white-space:pre-wrap; text-align:justify; font-weight:300;">${n.desc}</div>
+            <div style="font-size:1.15rem; line-height:1.8; color:#bbb; white-space:pre-wrap; text-align:justify; font-weight:300;">${n.desc || ''}</div>
         `;
         document.getElementById('newsVortex').style.display = "block";
         document.body.style.overflow = "hidden";
@@ -241,7 +265,7 @@
         document.body.style.overflow = "auto";
     }
 
-    // অ্যাডমিন প্যানেলে যাওয়ার ফাংশন
+    // অ্যাডমিন প্যানেলে যাওয়ার গোপন কোড
     function triggerAdmin() {
         const pass = prompt("অ্যাডমিন এক্সেস কোড দিন:");
         if(pass === "Sa@im3457") {
@@ -252,8 +276,10 @@
         }
     }
 
+    // পেজ লোড হওয়ার পর কানেকশন শুরু
     window.onload = connectStream;
 </script>
+
 
 </body>
 </html>
