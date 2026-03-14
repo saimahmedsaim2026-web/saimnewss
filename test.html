@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Firebase Test</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+body{background:#111;color:#eee;font-family:sans-serif;padding:20px;max-width:500px;margin:0 auto}
+h2{color:#e8292a;margin-bottom:20px}
+.box{background:#1e1e1e;border:1px solid #333;padding:16px;margin-bottom:12px;border-radius:6px}
+.ok{color:#1ea855;font-weight:bold;font-size:15px}
+.err{color:#e8292a;font-weight:bold;font-size:15px}
+.wait{color:#f0a500;font-size:15px}
+button{background:#e8292a;color:#fff;border:none;padding:12px 24px;font-size:15px;cursor:pointer;border-radius:4px;width:100%;margin-top:10px}
+input{width:100%;background:#0d0d0d;border:1px solid #333;color:#eee;padding:10px;font-size:14px;margin-top:8px;border-radius:4px;outline:none}
+</style>
+</head>
+<body>
+<h2>🔥 Firebase সংযোগ টেস্ট</h2>
+
+<div class="box">
+  <div><b>Step 1:</b> Firebase লোড হচ্ছে...</div>
+  <div id="s1" class="wait">⏳ অপেক্ষা করুন...</div>
+</div>
+
+<div class="box">
+  <div><b>Step 2:</b> Firestore সংযোগ...</div>
+  <div id="s2" class="wait">⏳ অপেক্ষা করুন...</div>
+</div>
+
+<div class="box">
+  <div><b>Step 3:</b> ডেটা লেখার টেস্ট...</div>
+  <div id="s3" class="wait">⏳ অপেক্ষা করুন...</div>
+</div>
+
+<div class="box">
+  <div><b>Step 4:</b> ডেটা পড়ার টেস্ট...</div>
+  <div id="s4" class="wait">⏳ অপেক্ষা করুন...</div>
+</div>
+
+<div class="box">
+  <b>সংবাদ লেখার টেস্ট:</b>
+  <input type="text" id="test-news" placeholder="এখানে একটি সংবাদ শিরোনাম লিখুন"/>
+  <button onclick="testSaveNews()">📰 সংবাদ পাঠান</button>
+  <div id="news-result" style="margin-top:10px;font-size:13px;color:#aaa"></div>
+</div>
+
+<div class="box" id="saved-news-box" style="display:none">
+  <b>✅ সংরক্ষিত সংবাদ:</b>
+  <div id="saved-news-list" style="margin-top:10px;font-size:13px;color:#aaa"></div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAGF-VGW7lOYAmnyHbyL04epcBoac2o0JE",
+  authDomain: "saimnews-5df37.firebaseapp.com",
+  databaseURL: "https://saimnews-5df37-default-rtdb.firebaseio.com",
+  projectId: "saimnews-5df37",
+  storageBucket: "saimnews-5df37.firebasestorage.app",
+  messagingSenderId: "715617372523",
+  appId: "1:715617372523:web:bdd657878e4e2f12f4a42e",
+  measurementId: "G-XNZ42MQXMB"
+};
+
+let db;
+
+// Step 1
+try {
+  firebase.initializeApp(firebaseConfig);
+  document.getElementById('s1').className='ok';
+  document.getElementById('s1').textContent='✅ Firebase লোড সফল!';
+} catch(e) {
+  document.getElementById('s1').className='err';
+  document.getElementById('s1').textContent='❌ Firebase লোড ব্যর্থ: '+e.message;
+}
+
+// Step 2
+try {
+  db = firebase.firestore();
+  document.getElementById('s2').className='ok';
+  document.getElementById('s2').textContent='✅ Firestore সংযোগ সফল!';
+} catch(e) {
+  document.getElementById('s2').className='err';
+  document.getElementById('s2').textContent='❌ Firestore ব্যর্থ: '+e.message;
+}
+
+// Step 3 & 4 - Write then Read
+async function runTests() {
+  // Write test
+  try {
+    await db.collection('test').doc('ping').set({ time: new Date().toISOString(), msg: 'hello' });
+    document.getElementById('s3').className='ok';
+    document.getElementById('s3').textContent='✅ ডেটা লেখা সফল!';
+  } catch(e) {
+    document.getElementById('s3').className='err';
+    document.getElementById('s3').textContent='❌ লেখা ব্যর্থ: '+e.message;
+    return;
+  }
+
+  // Read test
+  try {
+    const doc = await db.collection('test').doc('ping').get();
+    if(doc.exists) {
+      document.getElementById('s4').className='ok';
+      document.getElementById('s4').textContent='✅ ডেটা পড়া সফল! সব ঠিক আছে 🎉';
+    }
+  } catch(e) {
+    document.getElementById('s4').className='err';
+    document.getElementById('s4').textContent='❌ পড়া ব্যর্থ: '+e.message;
+  }
+}
+
+runTests();
+
+// Save news test
+async function testSaveNews() {
+  const title = document.getElementById('test-news').value.trim();
+  if(!title) { alert('কিছু লিখুন!'); return; }
+  const el = document.getElementById('news-result');
+  el.textContent = '⏳ পাঠানো হচ্ছে...';
+  try {
+    await db.collection('news').add({
+      title: title,
+      body: 'এটি একটি পরীক্ষামূলক সংবাদ।',
+      category: 'বাংলাদেশ',
+      author: 'Saim News Desk',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    el.innerHTML = '<span style="color:#1ea855;font-weight:bold">✅ সংবাদ সংরক্ষিত হয়েছে!</span>';
+    document.getElementById('test-news').value = '';
+    loadSavedNews();
+  } catch(e) {
+    el.innerHTML = '<span style="color:#e8292a">❌ সমস্যা: '+e.message+'</span>';
+  }
+}
+
+async function loadSavedNews() {
+  try {
+    const snap = await db.collection('news').orderBy('createdAt','desc').limit(5).get();
+    if(!snap.empty) {
+      document.getElementById('saved-news-box').style.display='block';
+      document.getElementById('saved-news-list').innerHTML = snap.docs.map(d =>
+        `<div style="padding:6px 0;border-bottom:1px solid #333">📰 ${d.data().title}</div>`
+      ).join('');
+    }
+  } catch(e) {}
+}
+
+loadSavedNews();
+</script>
+</body>
+</html>
