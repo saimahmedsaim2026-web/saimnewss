@@ -204,8 +204,11 @@
     </main>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
 <script>
-    // (b) - আপনার দেওয়া ফায়ারবেস কানেকশন আইডি
+    // (b) - আপনার দেওয়া ফায়ারবেস কানেকশন কনফিগারেশন
     const firebaseConfig = {
         apiKey: "BORAzOk9gfuDcIllmqyirg6PtxjLXczeJYSurRw1kCHoE2gEnEN37bhEK19QKkPMM3VKriqBFqBYBb2bdeO4gxE",
         authDomain: "news-70912.firebaseapp.com",
@@ -215,21 +218,26 @@
         appId: "1:1087091279604:web:866e4a32c64b5f12"
     };
 
-    firebase.initializeApp(firebaseConfig);
+    // ফায়ারবেস ইনিশিয়ালাইজ করা
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.firestore();
 
-    // Security & Auth Check
+    // সিকিউরিটি এবং অটো-লোড চেক
     window.onload = function() {
-        // ইন্ডেক্স থেকে পাসওয়ার্ড দিয়ে না আসলে এক্সেস পাবে না
+        // সেশন চেক (ইনডেক্স থেকে পাসওয়ার্ড দিয়ে না আসলে এক্সেস পাবে না)
         if (sessionStorage.getItem("saim_admin") !== "active") {
             window.location.href = "index.html";
         } else {
             document.body.style.display = "block";
-            document.getElementById('adminEmailDisplay').innerText = "saimahmedsaim2020@gmail.com";
+            const emailDisplay = document.getElementById('adminEmailDisplay');
+            if(emailDisplay) emailDisplay.innerText = "saimahmedsaim2020@gmail.com";
             loadAdminData();
         }
     };
 
+    // নতুন নিউজ পাবলিশ করার ফাংশন
     function publishNews() {
         const title = document.getElementById('pTitle').value;
         const cat = document.getElementById('pCat').value;
@@ -237,7 +245,10 @@
         const img = document.getElementById('pImg').value;
         const vid = document.getElementById('pVid').value;
 
-        if(!title || !desc) { showToast("শিরোনাম এবং বিবরণ দিন!"); return; }
+        if(!title || !desc) { 
+            showToast("শিরোনাম এবং বিবরণ দিন!"); 
+            return; 
+        }
 
         db.collection("saimNews").add({
             title: title,
@@ -246,7 +257,7 @@
             image: img || "https://via.placeholder.com/800x450?text=SaimNews",
             videoId: vid || null,
             date: new Date().toLocaleDateString('bn-BD'),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            timestamp: firebase.firestore.FieldValue.serverTimestamp() // রিয়েলটাইম সিরিয়ালের জন্য
         }).then(() => {
             showToast("নিউজ সিস্টেম লাইভ হয়েছে!");
             resetForm();
@@ -255,10 +266,14 @@
         });
     }
 
+    // অ্যাডমিন ড্যাশবোর্ডে নিউজ লিস্ট রেন্ডার করা
     function loadAdminData() {
         db.collection("saimNews").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
             const list = document.getElementById('adminNewsList');
-            document.getElementById('statTotal').innerText = snapshot.size;
+            const totalStat = document.getElementById('statTotal');
+            const todayStat = document.getElementById('statToday');
+            
+            if(totalStat) totalStat.innerText = snapshot.size;
             
             let html = "";
             let todayCount = 0;
@@ -268,44 +283,57 @@
                 const n = doc.data();
                 if(n.date === today) todayCount++;
 
-                const thumb = n.videoId ? `https://img.youtube.com/vi/${n.videoId}/mqdefault.jpg` : n.image;
+                // ভিডিও থাম্বনেইল বা ছবির লিঙ্ক চেক
+                const thumb = n.videoId ? `https://img.youtube.com/vi/${n.videoId}/mqdefault.jpg` : (n.image || 'https://via.placeholder.com/80?text=No+Img');
                 
                 html += `
                     <tr class="news-row">
-                        <td><img src="${thumb}" class="row-img"></td>
-                        <td><div style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${n.title}</div></td>
-                        <td><span class="badge badge-cat">${n.category}</span></td>
+                        <td><img src="${thumb}" class="row-img" style="width:50px; height:50px; object-fit:cover; border-radius:5px;"></td>
+                        <td><div style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${n.title}</div></td>
+                        <td><span class="badge badge-cat" style="background:red; color:white; padding:2px 8px; border-radius:4px; font-size:0.7rem;">${n.category}</span></td>
                         <td style="font-size:0.8rem; opacity:0.6;">${n.date}</td>
                         <td>
-                            <button class="action-icon edit-ic" onclick="prepareEdit('${doc.id}')"><i class="fas fa-edit"></i></button>
-                            <button class="action-icon del-ic" onclick="deleteNews('${doc.id}')"><i class="fas fa-trash-alt"></i></button>
+                            <button class="action-icon edit-ic" onclick="prepareEdit('${doc.id}')" style="cursor:pointer; color:cyan; background:none; border:none; margin-right:10px;"><i class="fas fa-edit"></i></button>
+                            <button class="action-icon del-ic" onclick="deleteNews('${doc.id}')" style="cursor:pointer; color:red; background:none; border:none;"><i class="fas fa-trash-alt"></i></button>
                         </td>
                     </tr>
                 `;
             });
-            list.innerHTML = html;
-            document.getElementById('statToday').innerText = todayCount < 10 ? '0' + todayCount : todayCount;
+            if(list) list.innerHTML = html;
+            if(todayStat) todayStat.innerText = todayCount < 10 ? '0' + todayCount : todayCount;
+        }, (error) => {
+            console.error("Data Load Error:", error);
         });
     }
 
+    // এডিট করার জন্য ডাটা ফরমে নিয়ে আসা
     function prepareEdit(id) {
         db.collection("saimNews").doc(id).get().then((doc) => {
-            const n = doc.data();
-            document.getElementById('editDocId').value = id;
-            document.getElementById('pTitle').value = n.title;
-            document.getElementById('pCat').value = n.category;
-            document.getElementById('pDesc').value = n.desc;
-            document.getElementById('pImg').value = n.image;
-            document.getElementById('pVid').value = n.videoId || "";
-            
-            document.getElementById('formTitle').innerText = "EDIT NEWS SIGNAL";
-            document.getElementById('publishBtn').style.display = "none";
-            document.getElementById('updateBtn').style.display = "flex";
-            document.getElementById('resetLink').style.display = "block";
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (doc.exists) {
+                const n = doc.data();
+                document.getElementById('editDocId').value = id;
+                document.getElementById('pTitle').value = n.title;
+                document.getElementById('pCat').value = n.category;
+                document.getElementById('pDesc').value = n.desc;
+                document.getElementById('pImg').value = n.image;
+                document.getElementById('pVid').value = n.videoId || "";
+                
+                // বাটন এবং টাইটেল চেঞ্জ
+                const fTitle = document.getElementById('formTitle');
+                if(fTitle) fTitle.innerText = "EDIT NEWS SIGNAL";
+                
+                document.getElementById('publishBtn').style.display = "none";
+                document.getElementById('updateBtn').style.display = "flex";
+                
+                const resetLnk = document.getElementById('resetLink');
+                if(resetLnk) resetLnk.style.display = "block";
+                
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         });
     }
 
+    // নিউজ আপডেট করার ফাংশন
     function updateNews() {
         const id = document.getElementById('editDocId').value;
         const updateData = {
@@ -319,36 +347,53 @@
         db.collection("saimNews").doc(id).update(updateData).then(() => {
             showToast("ডেটা সফলভাবে আপডেট হয়েছে!");
             resetForm();
+        }).catch((err) => {
+            showToast("Update Error: " + err.message);
         });
     }
 
+    // নিউজ ডিলিট করার ফাংশন
     function deleteNews(id) {
-        if(confirm("সিস্টেম থেকে এই ডেটা মুছে ফেলতে চান?")) {
+        if(confirm("সিস্টেম থেকে এই ডেটা স্থায়ীভাবে মুছে ফেলতে চান?")) {
             db.collection("saimNews").doc(id).delete().then(() => {
                 showToast("ডেটা মুছে ফেলা হয়েছে।");
+            }).catch((err) => {
+                showToast("Delete Error: " + err.message);
             });
         }
     }
 
+    // মেসেজ দেখানোর জন্য টোস্ট ফাংশন
     function showToast(msg) {
         const t = document.getElementById('toast');
-        t.innerText = msg;
-        t.style.display = "block";
-        setTimeout(() => { t.style.display = "none"; }, 3000);
+        if(t) {
+            t.innerText = msg;
+            t.style.display = "block";
+            setTimeout(() => { t.style.display = "none"; }, 3000);
+        } else {
+            alert(msg);
+        }
     }
 
+    // ফরম রিসেট করার ফাংশন
     function resetForm() {
         document.getElementById('editDocId').value = "";
         document.getElementById('pTitle').value = "";
         document.getElementById('pDesc').value = "";
         document.getElementById('pImg').value = "";
         document.getElementById('pVid').value = "";
-        document.getElementById('formTitle').innerText = "PUBLISH NEWS";
+        
+        const fTitle = document.getElementById('formTitle');
+        if(fTitle) fTitle.innerText = "PUBLISH NEWS";
+        
         document.getElementById('publishBtn').style.display = "flex";
         document.getElementById('updateBtn').style.display = "none";
-        document.getElementById('resetLink').style.display = "none";
+        
+        const resetLnk = document.getElementById('resetLink');
+        if(resetLnk) resetLnk.style.display = "none";
     }
 
+    // লগআউট ফাংশন
     function logout() {
         sessionStorage.clear();
         window.location.href = "index.html";
