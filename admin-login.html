@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin Login — Saim News Agency</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Noto Sans Bengali',sans-serif}
+.bg{position:fixed;inset:0;background:radial-gradient(ellipse at 30% 40%,rgba(220,30,30,0.12),transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(0,80,160,0.08),transparent 50%);pointer-events:none}
+.card{background:#141414;border:1px solid #2a2a2a;border-top:3px solid #e8292a;padding:44px 40px;width:380px;box-shadow:0 30px 80px rgba(0,0,0,0.7)}
+.logo-area{text-align:center;margin-bottom:32px}
+.logo-area img{height:52px;margin-bottom:12px;object-fit:contain}
+.logo-fallback{display:inline-flex;align-items:center;gap:10px;margin-bottom:12px}
+.logo-icon{background:#e8292a;color:#fff;font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;padding:8px 14px;clip-path:polygon(0 0,92% 0,100% 50%,92% 100%,0 100%)}
+.logo-name{font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:#fff;letter-spacing:1px}
+.sub{font-size:11px;letter-spacing:3px;color:#555;font-family:'Oswald',sans-serif;text-transform:uppercase}
+.form-title{font-family:'Oswald',sans-serif;font-size:16px;letter-spacing:2px;color:#888;text-transform:uppercase;margin-bottom:24px;text-align:center}
+label{display:block;font-size:11px;letter-spacing:2px;color:#666;text-transform:uppercase;font-family:'Oswald',sans-serif;margin-bottom:6px}
+input{width:100%;background:#0d0d0d;border:1px solid #2a2a2a;color:#f0f0f0;padding:12px 14px;font-size:14px;font-family:'Noto Sans Bengali',sans-serif;outline:none;margin-bottom:18px;transition:border-color .2s}
+input:focus{border-color:#e8292a}
+.btn{width:100%;background:#e8292a;color:#fff;border:none;padding:13px;font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:background .2s;margin-top:4px}
+.btn:hover{background:#c0201e}
+.err{background:rgba(232,41,42,0.12);border:1px solid rgba(232,41,42,0.3);color:#e8292a;font-size:12px;padding:10px 14px;margin-bottom:14px;display:none}
+.hint{font-size:11px;color:#444;text-align:center;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="card">
+  <div class="logo-area">
+    <div class="logo-fallback" id="logoBox">
+      <div class="logo-icon">SNA</div>
+      <div class="logo-name">SAIM NEWS</div>
+    </div>
+    <img id="logoImg" src="logo.png" alt="Saim News Agency" style="display:none" onerror="this.style.display='none';document.getElementById('logoBox').style.display='inline-flex'"/>
+    <div class="sub">Admin Panel</div>
+  </div>
+  <div class="form-title">🔐 অ্যাডমিন লগইন</div>
+  <div class="err" id="errBox">❌ ভুল ইউজারনেম বা পাসওয়ার্ড!</div>
+  <label>ইউজারনেম</label>
+  <input type="text" id="uname" placeholder="username লিখুন" autocomplete="off"/>
+  <label>পাসওয়ার্ড</label>
+  <input type="password" id="pass" placeholder="password লিখুন" onkeydown="if(event.key==='Enter')doLogin()"/>
+  <button class="btn" onclick="doLogin()">প্রবেশ করুন</button>
+  <div class="hint">© 2026 Saim News Agency — Authorized Access Only</div>
+</div>
+<script>
+function doLogin(){
+  const u=document.getElementById('uname').value.trim();
+  const p=document.getElementById('pass').value.trim();
+  if(u==='Sa' && p==='@im3457'){
+    sessionStorage.setItem('sna_admin','1');
+    window.location.href='admin.html';
+  } else {
+    document.getElementById('errBox').style.display='block';
+    document.getElementById('pass').value='';
+  }
+}
+// Try show logo.png
+window.onload=function(){
+  const img=document.getElementById('logoImg');
+  img.style.display='block';
+}
+</script>
+</body>
+</html>
